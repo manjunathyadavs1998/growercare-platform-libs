@@ -25,6 +25,7 @@
     <module>libs/gc-test-support</module>
     <module>services/identity-access-service</module>
     <module>services/case-service</module>
+    <module>coverage</module>
   </modules>
 
   <properties>
@@ -34,6 +35,16 @@
     <archunit.version>1.5.1</archunit.version>
     <springdoc.version>3.2.0</springdoc.version>
     <jacoco.version>0.8.14</jacoco.version>
+    <sonar-maven-plugin.version>5.8.0.7211</sonar-maven-plugin.version>
+    <!-- SonarQube Cloud (SPEC-PLAT-03 D2). Token comes from the SONAR_TOKEN env var in CI, never from the repo. -->
+    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+    <sonar.organization>manjunathyadavs1998</sonar.organization>
+    <sonar.projectKey>manjunathyadavs1998_growercare</sonar.projectKey>
+    <sonar.projectName>growercare</sonar.projectName>
+    <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    <sonar.coverage.exclusions>**/*Application.java,**/libs/gc-test-support/**</sonar.coverage.exclusions>
+    <sonar.cpd.exclusions>**/db/**/*.sql</sonar.cpd.exclusions>
+    <sonar.qualitygate.wait>true</sonar.qualitygate.wait>
   </properties>
 
   <dependencyManagement>
@@ -53,6 +64,11 @@
   <build>
     <pluginManagement>
       <plugins>
+        <plugin>
+          <groupId>org.sonarsource.scanner.maven</groupId>
+          <artifactId>sonar-maven-plugin</artifactId>
+          <version>${sonar-maven-plugin.version}</version>
+        </plugin>
         <plugin>
           <groupId>org.jacoco</groupId>
           <artifactId>jacoco-maven-plugin</artifactId>

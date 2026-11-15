@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.growercare</groupId>
+    <artifactId>gc-backend</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>coverage</artifactId>
+  <packaging>pom</packaging>
+  <name>coverage: merged JaCoCo report (SPEC-PLAT-03 R40)</name>
+
+  <!-- Every production module. Unit (jacoco.exec) and integration (jacoco-it.exec) data of all of them are merged,
+       so library code exercised by service ITs is credited. gc-test-support is test infrastructure: not measured. -->
+  <dependencies>
+    <dependency><groupId>com.growercare</groupId><artifactId>gc-common</artifactId></dependency>
+    <dependency><groupId>com.growercare</groupId><artifactId>gc-shard-routing</artifactId></dependency>
+    <dependency><groupId>com.growercare</groupId><artifactId>gc-security</artifactId></dependency>
+    <dependency><groupId>com.growercare</groupId><artifactId>gc-outbox</artifactId></dependency>
+    <dependency><groupId>com.growercare</groupId><artifactId>identity-access-service</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.growercare</groupId><artifactId>case-service</artifactId><version>${project.version}</version></dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <executions>
+          <!-- the parent binds prepare-agent/report for normal modules; nothing to instrument here -->
+          <execution><id>prepare-agent</id><phase>none</phase></execution>
+          <execution><id>prepare-agent-it</id><phase>none</phase></execution>
+          <execution><id>report</id><phase>none</phase></execution>
+          <execution>
+            <id>report-aggregate</id>
+            <phase>verify</phase>
+            <goals><goal>report-aggregate</goal></goals>
+            <configuration>
+              <dataFileIncludes>
+                <dataFileInclude>target/jacoco.exec</dataFileInclude>
+                <dataFileInclude>target/jacoco-it.exec</dataFileInclude>
+              </dataFileIncludes>
+              <excludes>
+                <exclude>**/*Application.class</exclude>
+              </excludes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
