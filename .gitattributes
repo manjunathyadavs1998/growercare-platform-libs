@@ -1,0 +1,11 @@
+# SPEC-PLAT-01 R12: normalise line endings; scripts and SQL must stay LF (Docker init scripts and Flyway checksums).
+* text=auto eol=lf
+*.sh  text eol=lf
+*.sql text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.java text eol=lf
+*.md  text eol=lf
+*.pdf binary
+*.png binary
+*.jar binary

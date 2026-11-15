@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>4.1.2</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>com.growercare</groupId>
+  <artifactId>gc-backend</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>GrowerCare backend</name>
+
+  <modules>
+    <module>libs/gc-common</module>
+    <module>libs/gc-shard-routing</module>
+    <module>libs/gc-security</module>
+    <module>libs/gc-outbox</module>
+    <module>libs/gc-test-support</module>
+    <module>services/identity-access-service</module>
+    <module>services/case-service</module>
+  </modules>
+
+  <properties>
+    <java.version>21</java.version>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <archunit.version>1.5.1</archunit.version>
+    <springdoc.version>3.2.0</springdoc.version>
+    <jacoco.version>0.8.14</jacoco.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- Internal libraries -->
+      <dependency><groupId>com.growercare</groupId><artifactId>gc-common</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>com.growercare</groupId><artifactId>gc-shard-routing</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>com.growercare</groupId><artifactId>gc-security</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>com.growercare</groupId><artifactId>gc-outbox</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>com.growercare</groupId><artifactId>gc-test-support</artifactId><version>${project.version}</version></dependency>
+      <!-- Third party (not managed by the Spring Boot BOM) -->
+      <dependency><groupId>com.tngtech.archunit</groupId><artifactId>archunit-junit5</artifactId><version>${archunit.version}</version></dependency>
+      <dependency><groupId>org.springdoc</groupId><artifactId>springdoc-openapi-starter-webmvc-ui</artifactId><version>${springdoc.version}</version></dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${jacoco.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>enforce-toolchain</id>
+            <goals><goal>enforce</goal></goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion><version>[21,)</version></requireJavaVersion>
+                <requireMavenVersion><version>[3.9,)</version></requireMavenVersion>
+                <banDuplicatePomDependencyVersions/>
+                <bannedDependencies>
+                  <!-- ADR-013: no ORM. Queries are hand-written SQL via JdbcClient. -->
+                  <excludes>
+                    <exclude>org.hibernate.orm:*</exclude>
+                    <exclude>org.springframework.boot:spring-boot-starter-data-jpa</exclude>
+                  </excludes>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <parameters>true</parameters>
+          <compilerArgs>
+            <arg>-Xlint:all,-processing,-serial</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- Unit tests: *Test. Integration tests (*IT) run in failsafe. -->
+          <excludes><exclude>**/*IT.java</exclude></excludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals><goal>integration-test</goal><goal>verify</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <executions>
+          <execution><id>prepare-agent</id><goals><goal>prepare-agent</goal></goals></execution>
+          <execution><id>prepare-agent-it</id><goals><goal>prepare-agent-integration</goal></goals></execution>
+          <execution><id>report</id><phase>verify</phase><goals><goal>report</goal><goal>report-integration</goal></goals></execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
