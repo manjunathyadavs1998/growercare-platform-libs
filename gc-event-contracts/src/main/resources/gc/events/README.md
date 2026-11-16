@@ -24,6 +24,7 @@ without a contract change fails the build.
 | `case.status_changed` | `case.case.events` | Workflow transition (SPEC-CASE-02). |
 | `case.shared` | `case.case.events` | Case shared with a partner organisation (SPEC-CASE-03). |
 | `case.unshared` | `case.case.events` | Partner share removed (SPEC-CASE-03). |
+| `case.attachment.scanned` | `case.case.events` | An uploaded attachment was scanned: CLEAN, INFECTED or REJECTED (SPEC-CASE-05). |
 | `comment.posted` | `case.case.events` | A comment was posted; keyed by caseId so it is ordered with the case's other events (SPEC-CASE-03). No comment text (PII risk). |
 | `case.sla.warning` | `case.case.events` | An SLA warning threshold was reached (SPEC-CASE-04 R82). |
 | `case.sla.breached` | `case.case.events` | The SLA was breached (SPEC-CASE-04 R82). |

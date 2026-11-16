@@ -37,6 +37,16 @@
         "visibility"
       ],
       "properties": {
+        "attachmentIds": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9]{1,19}$",
+            "description": "64-bit id serialised as a string (convention 2)"
+          },
+          "description": "SPEC-CASE-05 R111: linked attachments (optional, BACKWARD-compatible addition)"
+        },
         "authorRole": {
           "type": "string",
           "pattern": "^[A-Z0-9_-]{1,64}$"

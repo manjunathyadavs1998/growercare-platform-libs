@@ -15,6 +15,7 @@ public enum ErrorCode {
     PRECONDITION_REQUIRED("precondition-required", HttpStatus.PRECONDITION_REQUIRED, "If-Match header is required"),
     DUPLICATE("duplicate", HttpStatus.CONFLICT, "Resource already exists"),
     IDEMPOTENCY_KEY_REUSED("idempotency-key-reused", HttpStatus.CONFLICT, "Idempotency key was used with a different request"),
+    NOT_READY("not-ready", HttpStatus.CONFLICT, "Resource is not ready for this operation"),
     BUSINESS_RULE_VIOLATION("business-rule-violation", HttpStatus.UNPROCESSABLE_CONTENT, "Business rule violated"),
     ARCHIVE_NOT_ENABLED("archive-not-enabled", HttpStatus.NOT_IMPLEMENTED, "Archive queries are not enabled yet"),
     DEPENDENCY_UNAVAILABLE("dependency-unavailable", HttpStatus.SERVICE_UNAVAILABLE, "A dependency is temporarily unavailable"),
