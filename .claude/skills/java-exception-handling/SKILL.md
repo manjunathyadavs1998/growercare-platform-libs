@@ -1,9 +1,9 @@
 ---
 name: java-exception-handling
-description: GrowerCare exception handling for gc-backend - the sealed GcException hierarchy and ErrorCode catalogue (gc-common), HTTP status mapping, RFC 9457 Problem Details responses, JDBC/Spring exception translation in adapters, validation errors, what to log and what never to expose. Use when throwing, translating or handling errors, adding an error code, or writing a controller advice or error tests.
+description: GrowerCare exception handling - the sealed GcException hierarchy and ErrorCode catalogue (gc-common), HTTP status mapping, RFC 9457 Problem Details responses, JDBC/Spring exception translation in adapters, validation errors, what to log and what never to expose. Use when throwing, translating or handling errors, adding an error code, or writing a controller advice or error tests.
 ---
 
-# Exception handling (gc-backend)
+# Exception handling
 
 Code:
 - `libs/gc-common`: `common.error` (hierarchy, `ErrorCode`), `common.web.GcProblemHandler` (MVC advice), `common.web.TraceIds`;

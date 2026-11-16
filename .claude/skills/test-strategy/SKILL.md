@@ -14,7 +14,7 @@ description: Plan and write tests for GrowerCare following the project's test py
 | Contract | Pact (consumer-driven) + Avro compatibility | Service↔service and frontend↔backend | Provider verification green |
 | Data pipeline | Testcontainers Postgres + Kafka + Debezium (connect container); Snowflake via staging account in nightly | CDC completeness, MERGE idempotency, purge-marker / partition verification | Nightly green before release |
 | E2E | Playwright against a staging cell | Role journeys, isolation, offline sync | Must pass for release |
-| Load | k6 (`gc-backend/perf`) | 2× stage peak, soak 2 h | SLOs: p95 read < 250 ms, write < 500 ms, error < 0.1% |
+| Load | k6 (`perf/` per service repository, planned) | 2× stage peak, soak 2 h | SLOs: p95 read < 250 ms, write < 500 ms, error < 0.1% |
 | Resilience | Toxiproxy (integration), chaos experiments in staging | DB failover, broker loss, Redis loss, slow ERP | SLOs held / graceful degradation |
 
 ## Must-have test suites (from the requirements)
@@ -59,9 +59,9 @@ description: Plan and write tests for GrowerCare following the project's test py
   - a plain `@Test` is allowed only for one-off wiring checks (context, health) or a multi-step scenario that is itself one spec example (e.g. `iamE18SegregationOfDutiesThenRevocation`).
 - **One assertion path per parameterized method;** rows differ only in data, and are independent of each other.
 - Test names describe the behaviour in camelCase (`growerMustBelongToTheShardCountry`, `appRoleCannotRunDdl`).
-- Builders/fixtures in `libs/test-support`; no shared mutable fixtures between tests.
+- Builders/fixtures in gc-test-support; no shared mutable fixtures between tests.
 - Testcontainers: use `com.growercare.testsupport.PostgresTestDatabase.forService("<db>")`. It's one container per JVM and recreates the production **owner/app role split**: migrate with `ownerDataSource()`, assert with `appDataSource()`. Sharded services migrate all shard schemas through `ShardedFlywayMigrator`.
-- Naming: `*Test` = unit (Surefire, no Docker); `*IT` = integration (Failsafe, needs Docker). Run with `mvn -B verify` from `gc-backend`.
+- Naming: `*Test` = unit (Surefire, no Docker); `*IT` = integration (Failsafe, needs Docker). Run with `mvn -B verify` in the repository.
 - DB assertions: assert the **constraint name** for integrity violations. For privilege denials assert `.rootCause().hasMessageContaining("permission denied")`, because Spring wraps SQLState 42501 as `BadSqlGrammarException`.
 - **The case DB is light and shared per JVM:** `CaseTestDatabase.migrated()` migrates the common schema plus **only** the shards in `TEST_SHARDS`, about 10 instead of 128:
   - the shards the dev-seed growers route to, via `ShardRouter`;
@@ -72,14 +72,14 @@ description: Plan and write tests for GrowerCare following the project's test py
   - `TestJwts` (gc-test-support): RS256 tokens shaped like Keycloak's, with the dev-seed subjects as constants; `TestJwts.decoder(audiences)` gives a production-equivalent `JwtDecoder`. Register it as `@Primary` in a `@TestConfiguration`.
   - `DevSeedPrincipals` (case-service): the dev users as IAM resolves them; use it to stub `PrincipalResolver`.
   - `RedisTestContainer` (gc-test-support): password-protected Redis; `pause()`/`unpause()` simulate an outage.
-- **Stop locally running services before `mvn verify`** (`local-dev/run-services.sh stop`). On Windows they lock `target/*.jar`, and the build hangs silently with an empty log (seen 2026-11-15).
+- **Stop locally running services before `mvn verify`** (`docker compose down` in the service repository). On Windows they lock `target/*.jar`, and the build hangs silently with an empty log (seen 2026-11-15).
 - **Counting partitions:** `pg_inherits` also links index partitions. Count only `pg_class.relkind = 'r'`.
 - **`@Nested` gotcha (Spring Framework 7):** a nested static `@TestConfiguration` is **not** picked up for `@Nested` test classes. Always add `@Import(MyIT.Stubs.class)` on the outer class. Otherwise the real beans load silently; e.g. the Keycloak `JwtDecoder` rejected every test token with 401 (seen 2026-11-15).
 - **Spring Boot 4 test packages:** `org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc`, `org.springframework.test.context.bean.override.mockito.MockitoBean`.
 - **Isolation matrix pattern:** insert fixtures into real shards, then assert each user's visible set through **both** the SQL `ScopeFilter` and `PolicyEnforcer` (they must agree). See `CaseIsolationIT`.
 - **Coverage gate (SPEC-PLAT-03):**
-  - **Measurement:** the merged JaCoCo report (`gc-backend/coverage`, unit + IT data of all modules, `*Application` excluded) must show **overall line coverage ≥ 80%**. `scripts/coverage_gate.py` fails `backend-ci / verify` below that.
-  - **Local check:** after `mvn -B verify`, run `python scripts/coverage_gate.py gc-backend/coverage/target/site/jacoco-aggregate/jacoco.xml`.
+  - **Measurement:** the merged JaCoCo report (unit + IT data, `*Application` excluded; services: `target/site/jacoco-merged/jacoco.xml`, libs: `coverage/target/site/jacoco-aggregate/jacoco.xml`) must show **overall line coverage ≥ 80%**. `scripts/coverage_gate.py` fails the required `verify` check below that.
+  - **Local check:** after `mvn -B verify`, run `python scripts/coverage_gate.py <report above>`.
   - **SonarQube Cloud** also requires ≥ 80% on new code. Write the spec's parameterized rows; don't chase coverage with assertion-free tests.
 - **Claude review gate (SPEC-PLAT-03):** every PR gets a structured review. `scripts/review_gate.py` fails the required `claude-review` check on Critical/High findings.
 - **Quality gates (SPEC-PLAT-01):**

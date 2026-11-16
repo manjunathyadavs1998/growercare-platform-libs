@@ -1,9 +1,9 @@
 ---
 name: java-backend-standards
-description: GrowerCare Java 21 / Spring Boot 4 coding standards for gc-backend - modern Java (records, sealed types, switch patterns, streams, Optional, var, text blocks), immutability, package layout, naming, logging/PII rules, virtual threads, build and review checklist. Use whenever writing, refactoring or reviewing any Java code in gc-backend.
+description: GrowerCare Java 21 / Spring Boot 4 coding standards for every GrowerCare Java repository - modern Java (records, sealed types, switch patterns, streams, Optional, var, text blocks), immutability, package layout, naming, logging/PII rules, virtual threads, build and review checklist. Use whenever writing, refactoring or reviewing any GrowerCare Java code.
 ---
 
-# Java backend standards (gc-backend)
+# Java backend standards
 
 Stack:
 - Java 21, Spring Boot **4.1.2** (Spring Framework 7), Maven multi-module (ADR-014);
@@ -100,11 +100,10 @@ No code without a spec rule; no rule without a test row.
 
 ## 8. Build and verify
 ```
-cd gc-backend
-mvn -B verify                              # unit + integration (Docker must be running)
-mvn -B -pl services/case-service -am verify  # one service and its libs
+mvn -B verify          # in the service or libs repository: unit + integration (Docker must be running)
 ```
-- **Never resume with `-rf :<module>` after changing a library.** Resumed builds take upstream modules from `~/.m2` (stale jars), not the reactor. Rerun the full `mvn -B verify` or use `-pl … -am`.
+- Each service is its own repository (ADR-017) and depends on released `growercare-platform-libs` versions. To try a library change in a service, run `mvn install -Drevision=<x.y.z>` in the libs repository, point the service at that version, and release the libs tag before merging the service.
+- In the libs repository, **never resume with `-rf :<module>` after changing a library.** Resumed builds take upstream modules from `~/.m2` (stale jars), not the reactor.
 - The enforcer bans Hibernate/JPA. Don't add dependencies without managing their version in the parent POM.
 - `-Xlint:all` is on: fix warnings rather than suppressing them; any `@SuppressWarnings` needs a reason.
 - Report real test counts. Never claim a pass without running the build.

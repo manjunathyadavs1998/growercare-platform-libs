@@ -26,7 +26,7 @@ description: Design or change a GrowerCare REST API contract-first in gc-contrac
 ## Where the contract lives (current state, SPEC-PLAT-01)
 - **Generated from the code** by springdoc, through the shared `OpenApiConfiguration` in gc-common: title = application name, global HTTP bearer scheme `bearer`.
 - **Exposure:** `/v3/api-docs` and Swagger UI only with `springdoc.api-docs.enabled=true` (the `local` profile). Elsewhere the routes are secured and answer 401.
-- **Committed copy:** `gc-backend/contracts/<service>.openapi.json`, written by `<Svc>OpenApiContractIT` with sorted keys for stable diffs. CI runs `git diff --exit-code gc-backend/contracts/`, so an unreviewed API change fails the build.
+- **Committed copy:** `contracts/<service>.openapi.json` in the service repository, written by `<Svc>OpenApiContractIT` with sorted keys for stable diffs. CI runs `git diff --exit-code contracts/`, so an unreviewed API change fails the build.
 - **Later:** the contract moves to `gc-contracts` (contract-first), and the export test turns into a compatibility check against it.
 
 ## Workflow

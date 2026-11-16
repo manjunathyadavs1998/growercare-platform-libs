@@ -7,7 +7,7 @@ description: Write and roll out Flyway database migrations for GrowerCare's shar
 
 Background: `docs/syngenta/04_ID_GENERATION_DESIGN.md` (per-shard `next_id()`, `next_case_no()`), `05_CASE_COMMENTS_DESIGN.md §6` (weekly partitions, carryover), ADR-002, ADR-004.
 
-## Layout (as implemented in `gc-backend/services/case-service`)
+## Layout (as implemented in growercare-case-service)
 ```
 src/main/resources/db/case/
 ├─ common/    V<n>__*.sql   # schema `ref`: replicas, workflow tables, shard map (ref.shard), damm_check_digit, id_floor
