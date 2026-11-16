@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPEC-PLAT-02 R22–R26: pull-request policy. Pure function of its inputs (no network), so it is unit-testable.
 # Inputs (environment; never interpolated into code):
-#   PR_TITLE, PR_BODY, HEAD_REF   — from the pull_request event
+#   PR_TITLE, PR_BODY, HEAD_REF, PR_AUTHOR — from the pull_request event
 #   CHANGED_FILES                 — newline-separated paths (git diff --name-only base...head)
 # Exit 0 = pass, 1 = policy violation. Messages use GitHub annotations when GITHUB_ACTIONS is set.
 set -uo pipefail
@@ -15,6 +15,7 @@ warn() { if [[ -n "${GITHUB_ACTIONS:-}" ]]; then echo "::warning title=$1::$2"; 
 title=${PR_TITLE:-}
 body=${PR_BODY:-}
 branch=${HEAD_REF:-}
+author=${PR_AUTHOR:-}
 files=${CHANGED_FILES:-}
 
 # R26 — branch naming (bot branches exempt)
@@ -27,8 +28,8 @@ if [[ ! "$title" =~ ^($TYPES)(\([a-z0-9-]+\))?!?:\ .{3,72}$ ]]; then
   fail "PLAT-R22" "PR title must be '<type>(<scope>)?: <subject>' with a 3–72 char subject, e.g. 'feat(case): add SLA timers'"
 fi
 
-# R23 — every change names its spec (spec-driven development)
-if ! grep -qiE '^Spec:[[:space:]]*(docs/specs/[A-Za-z0-9/_.-]+\.md|n/a[[:space:]]*[-–—:][[:space:]]*.{3,})' <<<"$body"; then
+# R23 — every change names its spec (spec-driven development); Dependabot's PRs are specified by R28
+if [[ "$author" != 'dependabot[bot]' ]] && ! grep -qiE '^Spec:[[:space:]]*(docs/specs/[A-Za-z0-9/_.-]+\.md|n/a[[:space:]]*[-–—:][[:space:]]*.{3,})' <<<"$body"; then
   fail "PLAT-R23" "PR body needs a line 'Spec: docs/specs/<service>/<NN>-<feature>.md' (or 'Spec: n/a – <reason>')"
 fi
 
