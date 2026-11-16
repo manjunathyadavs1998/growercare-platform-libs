@@ -22,7 +22,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Self-test the policy (SPEC-PLAT-02 examples E30–E40)
+      - name: Self-test the policy (SPEC-PLAT-02 examples E30–E42)
         run: bash scripts/pr-policy-selftest.sh
 
       - name: Self-test the quality gates (SPEC-PLAT-03 examples E50–E58)
@@ -35,6 +35,7 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
