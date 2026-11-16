@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """SPEC-PLAT-03 R41/R42: overall line-coverage gate on the merged JaCoCo report.
 
-  python scripts/coverage_gate.py gc-backend/coverage/target/site/jacoco-aggregate/jacoco.xml \
+  python scripts/coverage_gate.py <jacoco.xml> \
          [--min-line 80] [--summary-file out.md]
 Exit 1 when overall LINE coverage < threshold or the report is missing (fail closed).
 Self-test: `python scripts/coverage_gate.py --selftest` (spec examples PLAT-E56..E58).

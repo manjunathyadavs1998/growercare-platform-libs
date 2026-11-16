@@ -1,9 +1,9 @@
 ---
 name: java-security-rbac
-description: GrowerCare authentication and authorization in gc-backend - Keycloak JWT resource server, our own grant model (role + permissions + geo/BU scope + validity, not Keycloak roles), GcPrincipal, @RequiresPermission (403), PolicyEnforcer object-level checks (404 when out of scope), ScopeFilter to SQL, delegation and SoD rules, Redis principal cache, hardening and the security test matrix. Use when adding endpoints, permissions or roles, writing access checks or queries over scoped data, or reviewing security.
+description: GrowerCare authentication and authorization - Keycloak JWT resource server, our own grant model (role + permissions + geo/BU scope + validity, not Keycloak roles), GcPrincipal, @RequiresPermission (403), PolicyEnforcer object-level checks (404 when out of scope), ScopeFilter to SQL, delegation and SoD rules, Redis principal cache, hardening and the security test matrix. Use when adding endpoints, permissions or roles, writing access checks or queries over scoped data, or reviewing security.
 ---
 
-# Security: RBAC + scope (gc-backend)
+# Security: RBAC + scope
 
 Read: BRD §3–§4 (roles, ACC-1..12), `docs/backend/01_RDS_SCHEMA.md §3` (grant tables), ADR-005 (Keycloak), ADR-011 (Redis).
 Code:

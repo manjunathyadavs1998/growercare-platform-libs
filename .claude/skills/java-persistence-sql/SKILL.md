@@ -1,9 +1,9 @@
 ---
 name: java-persistence-sql
-description: GrowerCare persistence rules without an ORM (ADR-013) - normalised Postgres schema design, Flyway migrations with owner/app roles, Spring JdbcClient with named SQL files, record row mappers, shard-qualified SQL via ShardRouter, keyset pagination, optimistic locking, idempotent inserts, scope filters as SQL, transactions, JDBC exception translation, and hot/archive ports ready for Snowflake. Use when designing tables, writing migrations, repositories or queries in gc-backend.
+description: GrowerCare persistence rules without an ORM (ADR-013) - normalised Postgres schema design, Flyway migrations with owner/app roles, Spring JdbcClient with named SQL files, record row mappers, shard-qualified SQL via ShardRouter, keyset pagination, optimistic locking, idempotent inserts, scope filters as SQL, transactions, JDBC exception translation, and hot/archive ports ready for Snowflake. Use when designing tables, writing migrations, repositories or queries.
 ---
 
-# Persistence without an ORM (gc-backend)
+# Persistence without an ORM
 
 Read: `docs/backend/01_RDS_SCHEMA.md` (the current schema and why), ADR-013, ADR-002/003/004. For sharded DDL also load `sharded-migration`.
 

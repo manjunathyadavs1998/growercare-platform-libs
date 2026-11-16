@@ -1,13 +1,13 @@
 ---
 name: event-contract
-description: Define, change or consume a GrowerCare Kafka event (JSON Schema contract in gc-backend/contracts/events, per-aggregate topics, keys, headers, outbox → Debezium publishing, idempotent inbox consumption, retries/DLQ). Use whenever a service publishes or consumes a domain event or a CDC topic.
+description: Define, change or consume a GrowerCare Kafka event (JSON Schema contract in gc-event-contracts, growercare-platform-libs, per-aggregate topics, keys, headers, outbox → Debezium publishing, idempotent inbox consumption, retries/DLQ). Use whenever a service publishes or consumes a domain event or a CDC topic.
 ---
 
 # Event contracts (Kafka)
 
 Background: SPEC-PLAT-04 (`docs/specs/platform/04-event-publishing-and-consumers.md`), ADR-012 (keys/partitions), **ADR-015 (JSON + JSON Schema until the AWS stage)**, `02_DESIGN_PATTERNS.md` (outbox, inbox, sagas).
 
-## 1. Define the contract first (`gc-backend/contracts/events/`)
+## 1. Define the contract first (`gc-event-contracts/src/main/resources/gc/events/` in growercare-platform-libs)
 - One file per event type: `<eventType>.schema.json` (JSON Schema 2020-12). Example: `case.status_changed.schema.json`.
 - The value is the outbox envelope `{eventId (uuid), eventType (const), occurredAt (date-time), data}`.
 - `data`:
@@ -17,6 +17,7 @@ Background: SPEC-PLAT-04 (`docs/specs/platform/04-event-publishing-and-consumers
 - **Key:** the aggregate id as a **string** (`OutboxWriter.Event.aggregateId`). The Debezium router maps `aggregate_type` to the topic.
 - **Headers** (added by the Debezium EventRouter): `id`, `eventType`, `traceId`, `occurredAt`.
 - **Compatibility is BACKWARD only.** You may add an *optional* field. You may not remove or rename fields or change types. A breaking change needs a new event type, dual publishing and a consumer migration.
+- The contract ships in a libs release: release the tag before the producing or consuming service bumps its libs version.
 - Add the type to the README table and to the service's `*EventContractIT` rows (`EventContracts.violations(type, json)` in gc-test-support).
 
 ## 2. Publish (outbox only)
