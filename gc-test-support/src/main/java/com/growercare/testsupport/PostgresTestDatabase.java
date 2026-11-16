@@ -23,7 +23,7 @@ public final class PostgresTestDatabase {
     public static final String IMAGE = "postgres:17.6-alpine";
 
     private static final PostgreSQLContainer CONTAINER = new PostgreSQLContainer(IMAGE)
-            .withCommand("postgres", "-c", "max_connections=100", "-c", "shared_buffers=128MB", "-c", "fsync=off",
+            .withCommand("postgres", "-c", "max_connections=300", "-c", "shared_buffers=128MB", "-c", "fsync=off",
                     "-c", "synchronous_commit=off", "-c", "full_page_writes=off");
     private static final Map<String, PostgresTestDatabase> DATABASES = new ConcurrentHashMap<>();
 

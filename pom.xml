@@ -36,7 +36,7 @@
     <json-schema-validator.version>3.0.6</json-schema-validator.version>
     <archunit.version>1.5.1</archunit.version>
     <springdoc.version>3.2.0</springdoc.version>
-    <jacoco.version>0.8.14</jacoco.version>
+    <jacoco.version>0.8.16</jacoco.version>
     <sonar-maven-plugin.version>5.8.0.7211</sonar-maven-plugin.version>
     <!-- SonarQube Cloud (SPEC-PLAT-03 D2). Token comes from the SONAR_TOKEN env var in CI, never from the repo. -->
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>

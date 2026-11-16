@@ -13,13 +13,17 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.firewall.RequestRejectedException;
+import org.springframework.security.web.firewall.RequestRejectedHandler;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
  * 401 / 403 / 503 from the security filter chain, written as RFC 9457 Problem Details (the MVC
  * {@code GcProblemHandler} does not see filter-level failures). Details never echo token contents.
+ * Also Spring Security's {@link RequestRejectedHandler}: firewall rejections become 400 problem+json on {@code path}
+ * (SPEC-PLAT-05 D1); the rejected URL is not echoed.
  */
-public final class ProblemSecurityHandlers implements AuthenticationEntryPoint, AccessDeniedHandler {
+public final class ProblemSecurityHandlers implements AuthenticationEntryPoint, AccessDeniedHandler, RequestRejectedHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ProblemSecurityHandlers.class);
 
@@ -46,9 +50,23 @@ public final class ProblemSecurityHandlers implements AuthenticationEntryPoint, 
         write(response, request, ErrorCode.PERMISSION_DENIED, "Permission denied");
     }
 
+    @Override
+    public void handle(HttpServletRequest request, HttpServletResponse response, RequestRejectedException e) throws IOException {
+        log.debug("request rejected by the firewall: {}", e.getMessage());
+        var problem = ProblemDetails.of(ErrorCode.VALIDATION_FAILED, "The request URL is not allowed", request);
+        problem.setInstance(null);
+        problem.setProperty("errors", java.util.List.of(java.util.Map.of("field", "path",
+                "message", "must not contain empty segments, ';', encoded slashes or traversal")));
+        write(response, problem);
+    }
+
     private void write(HttpServletResponse response, HttpServletRequest request, ErrorCode code, String detail) throws IOException {
-        var problem = ProblemDetails.of(code, detail, request);
-        response.setStatus(code.status().value());
+        write(response, ProblemDetails.of(code, detail, request));
+    }
+
+    private void write(HttpServletResponse response, org.springframework.http.ProblemDetail problem) throws IOException {
+        var code = problem.getStatus();
+        response.setStatus(code);
         response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
         response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
         json.writeValue(response.getOutputStream(), ProblemDetails.asMap(problem));

@@ -105,6 +105,28 @@ public class GcProblemHandler {
         return ProblemDetails.response(problem);
     }
 
+    /** SPEC-PLAT-05 R68: protocol errors keep their real status (never the 500 catch-all). */
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    ResponseEntity<ProblemDetail> handle(org.springframework.web.HttpRequestMethodNotSupportedException e, HttpServletRequest request) {
+        var problem = ProblemDetails.of(ErrorCode.METHOD_NOT_ALLOWED, "Method " + e.getMethod() + " is not allowed here", request);
+        var builder = ResponseEntity.status(problem.getStatus()).contentType(org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON);
+        if (e.getSupportedHttpMethods() != null) {
+            builder.allow(e.getSupportedHttpMethods().toArray(org.springframework.http.HttpMethod[]::new));
+        }
+        return builder.body(problem);
+    }
+
+    @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
+    ResponseEntity<ProblemDetail> handle(org.springframework.web.HttpMediaTypeNotSupportedException e, HttpServletRequest request) {
+        return ProblemDetails.response(ProblemDetails.of(ErrorCode.UNSUPPORTED_MEDIA_TYPE,
+                "Content type " + e.getContentType() + " is not supported", request));
+    }
+
+    @ExceptionHandler(org.springframework.web.HttpMediaTypeNotAcceptableException.class)
+    ResponseEntity<ProblemDetail> handle(org.springframework.web.HttpMediaTypeNotAcceptableException e, HttpServletRequest request) {
+        return ProblemDetails.response(ProblemDetails.of(ErrorCode.NOT_ACCEPTABLE, "No acceptable representation", request));
+    }
+
     /** Method security (@RequiresPermission) denials. */
     @ExceptionHandler(AccessDeniedException.class)
     ResponseEntity<ProblemDetail> handle(AccessDeniedException e, HttpServletRequest request) {
@@ -139,10 +161,19 @@ public class GcProblemHandler {
             var problem = ProblemDetail.forStatusAndDetail(HttpStatus.valueOf(code.status().value()), detail);
             problem.setType(URI.create(code.typeUri()));
             problem.setTitle(code.title());
-            problem.setInstance(URI.create(request.getRequestURI()));
+            problem.setInstance(safeUri(request.getRequestURI()));
             problem.setProperty("code", code.name());
             TraceIds.current(request).ifPresent(id -> problem.setProperty("traceId", id));
             return problem;
+        }
+
+        /** Rejected requests may carry URIs that are not valid {@link URI}s; the problem must still render. */
+        private static URI safeUri(String path) {
+            try {
+                return path == null ? null : URI.create(path);
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
         }
 
         public static ResponseEntity<ProblemDetail> response(ProblemDetail problem) {
