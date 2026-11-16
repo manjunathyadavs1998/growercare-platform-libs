@@ -38,7 +38,7 @@ public final class CachingPrincipalResolver implements PrincipalResolver {
 
     @Override
     public Optional<GcPrincipal> resolve(UUID subject) {
-        var key = KEY_PREFIX + subject;
+        var key = cacheKey(subject);
         var cached = read(key);
         if (cached.isPresent()) {
             return cached;
@@ -48,10 +48,18 @@ public final class CachingPrincipalResolver implements PrincipalResolver {
         return resolved;
     }
 
-    /** Called when IAM publishes a grant change for this subject (event consumer, later increments). */
+    /** The Redis key of a subject's cached principal; event consumers evict it (SPEC-PLAT-04 R58). */
+    public static String cacheKey(UUID subject) {
+        return KEY_PREFIX + subject;
+    }
+
+    /**
+     * Best-effort eviction (failures are logged, not thrown). The grant-event consumer deletes {@link #cacheKey}
+     * itself so that a Redis failure is retried (SPEC-PLAT-04 R57).
+     */
     public void evict(UUID subject) {
         try {
-            redis.delete(KEY_PREFIX + subject);
+            redis.delete(cacheKey(subject));
         } catch (RuntimeException e) {
             log.warn("Redis evict failed for a principal: {}", e.getMessage());
         }

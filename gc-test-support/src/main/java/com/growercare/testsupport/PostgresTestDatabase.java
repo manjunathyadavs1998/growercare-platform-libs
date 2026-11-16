@@ -53,9 +53,11 @@ public final class PostgresTestDatabase {
              var st = con.createStatement()) {
             st.execute("CREATE ROLE " + owner + " LOGIN PASSWORD '" + owner + "'");
             st.execute("CREATE ROLE " + app + " LOGIN PASSWORD '" + app + "'");
+            createCdcRoleOnce(st);
             st.execute("CREATE DATABASE " + db + " OWNER " + owner);
             st.execute("REVOKE ALL ON DATABASE " + db + " FROM PUBLIC");
             st.execute("GRANT CONNECT ON DATABASE " + db + " TO " + app);
+            st.execute("GRANT CONNECT ON DATABASE " + db + " TO " + CDC_ROLE);
         } catch (SQLException e) {
             throw new IllegalStateException("Cannot create test database " + db, e);
         }
@@ -69,6 +71,23 @@ public final class PostgresTestDatabase {
             throw new IllegalStateException("Cannot configure test database " + db, e);
         }
         return new PostgresTestDatabase(db);
+    }
+
+    /**
+     * SPEC-PLAT-04 D8: the cluster-wide Debezium login role, as in {@code local-dev/postgres/02-cdc-role.sh}.
+     * Migrations grant it SELECT on outbox tables only (placeholder {@code cdc_role}).
+     */
+    public static final String CDC_ROLE = "gc_cdc";
+
+    private static void createCdcRoleOnce(java.sql.Statement st) throws SQLException {
+        // Several service databases may be created concurrently; the role is cluster-wide, so tolerate "exists".
+        st.execute("DO $$ BEGIN CREATE ROLE " + CDC_ROLE + " LOGIN REPLICATION PASSWORD '" + CDC_ROLE + "'; "
+                + "EXCEPTION WHEN duplicate_object OR unique_violation THEN NULL; END $$");
+    }
+
+    /** Connection as the CDC role (privilege tests). */
+    public DataSource cdcDataSource() {
+        return new SimpleDriverDataSource(new org.postgresql.Driver(), jdbcUrl(), CDC_ROLE, CDC_ROLE);
     }
 
     private static String jdbcUrl(String db) {

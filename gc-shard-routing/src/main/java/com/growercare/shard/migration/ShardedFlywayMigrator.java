@@ -43,15 +43,19 @@ public final class ShardedFlywayMigrator {
             """;
 
     /**
-     * @param include which shards of {@code ref.shard} to migrate. Production: all ({@link #ALL_SHARDS}).
-     *                Tests pass a small subset (the shards their fixtures route to) to keep the test database light.
+     * @param include    which shards of {@code ref.shard} to migrate. Production: all ({@link #ALL_SHARDS}).
+     *                   Tests pass a small subset (the shards their fixtures route to) to keep the test database light.
+     * @param outOfOrder apply common migrations numbered below already-applied ones. Only for databases that carry
+     *                   the dev seed (V1000+), so a later common V5 still applies locally (SPEC-PLAT-04 R63).
+     *                   Production has no seed and keeps strict ordering ({@code false}).
      */
     public record Settings(
             List<String> commonLocations,
             List<String> shardLocations,
             Map<String, String> placeholders,
             int parallelism,
-            Predicate<ShardId> include) {
+            Predicate<ShardId> include,
+            boolean outOfOrder) {
 
         public static final Predicate<ShardId> ALL_SHARDS = shard -> true;
 
@@ -65,9 +69,15 @@ public final class ShardedFlywayMigrator {
             }
         }
 
-        /** Every shard of every active country (production). */
+        /** Every shard of every active country (production), strict ordering. */
         public Settings(List<String> commonLocations, List<String> shardLocations, Map<String, String> placeholders, int parallelism) {
-            this(commonLocations, shardLocations, placeholders, parallelism, ALL_SHARDS);
+            this(commonLocations, shardLocations, placeholders, parallelism, ALL_SHARDS, false);
+        }
+
+        /** A subset of shards, strict ordering. */
+        public Settings(List<String> commonLocations, List<String> shardLocations, Map<String, String> placeholders,
+                        int parallelism, Predicate<ShardId> include) {
+            this(commonLocations, shardLocations, placeholders, parallelism, include, false);
         }
     }
 
@@ -194,6 +204,7 @@ public final class ShardedFlywayMigrator {
                 .failOnMissingLocations(true)
                 .validateMigrationNaming(true)
                 .cleanDisabled(true)
+                .outOfOrder(settings.outOfOrder())
                 .load();
     }
 }

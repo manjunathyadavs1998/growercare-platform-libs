@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growercare.example/contracts/events/iam.grant.revoked.schema.json",
+  "title": "iam.grant.revoked",
+  "description": "A role grant was revoked (SPEC-IAM-01).",
+  "x-topic": "iam.grant.events",
+  "x-key": "grant id (aggregate_id), as a string",
+  "x-compatibility": "BACKWARD",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "eventId",
+    "eventType",
+    "occurredAt",
+    "data"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "eventType": {
+      "const": "iam.grant.revoked"
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "actorUserId",
+        "grantId",
+        "roleCode",
+        "subject",
+        "userId"
+      ],
+      "properties": {
+        "actorUserId": {
+          "type": "string",
+          "pattern": "^[0-9]{1,19}$",
+          "description": "64-bit id serialised as a string (convention 2)"
+        },
+        "grantId": {
+          "type": "string",
+          "pattern": "^[0-9]{1,19}$",
+          "description": "64-bit id serialised as a string (convention 2)"
+        },
+        "roleCode": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_-]{1,64}$"
+        },
+        "subject": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "userId": {
+          "type": "string",
+          "pattern": "^[0-9]{1,19}$",
+          "description": "64-bit id serialised as a string (convention 2)"
+        }
+      }
+    }
+  }
+}

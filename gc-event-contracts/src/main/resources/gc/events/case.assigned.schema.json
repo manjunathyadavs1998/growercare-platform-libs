@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://growercare.example/contracts/events/case.assigned.schema.json",
+  "title": "case.assigned",
+  "description": "The case was assigned to a staff user (SPEC-CASE-02).",
+  "x-topic": "case.case.events",
+  "x-key": "case id (aggregate_id), as a string",
+  "x-compatibility": "BACKWARD",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "eventId",
+    "eventType",
+    "occurredAt",
+    "data"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "eventType": {
+      "const": "case.assigned"
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assigneeUserId",
+        "caseId",
+        "version"
+      ],
+      "properties": {
+        "assigneeUserId": {
+          "type": "string",
+          "pattern": "^[0-9]{1,19}$",
+          "description": "64-bit id serialised as a string (convention 2)"
+        },
+        "caseId": {
+          "type": "string",
+          "pattern": "^[0-9]{1,19}$",
+          "description": "64-bit id serialised as a string (convention 2)"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

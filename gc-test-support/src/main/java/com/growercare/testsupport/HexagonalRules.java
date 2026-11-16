@@ -53,9 +53,11 @@ public final class HexagonalRules {
                         .that().resideInAPackage("..adapters.in..")
                         .should().dependOnClassesThat().resideInAPackage("..adapters.out..")
                         .allowEmptyShould(true)),
-                argumentSet("PLAT-R7 no ORM and no direct Kafka (ADR-013, outbox only)", noClasses()
-                        .should().dependOnClassesThat().resideInAnyPackage(
-                                "org.hibernate..", "jakarta.persistence..", "org.springframework.kafka..")),
+                argumentSet("PLAT-R64 no ORM (ADR-013)", noClasses()
+                        .should().dependOnClassesThat().resideInAnyPackage("org.hibernate..", "jakarta.persistence..")),
+                argumentSet("PLAT-R65 Kafka only in inbound messaging adapters and config (publishing = outbox)", noClasses()
+                        .that().resideOutsideOfPackages("..adapters.in.messaging..", "..config..")
+                        .should().dependOnClassesThat().resideInAnyPackage("org.springframework.kafka..", "org.apache.kafka..")),
                 argumentSet("PLAT-R8a no field injection", GeneralCodingRules.NO_CLASSES_SHOULD_USE_FIELD_INJECTION),
                 argumentSet("PLAT-R8b no System.out / System.err", GeneralCodingRules.NO_CLASSES_SHOULD_ACCESS_STANDARD_STREAMS),
                 argumentSet("PLAT-R8c no java.util.logging", GeneralCodingRules.NO_CLASSES_SHOULD_USE_JAVA_UTIL_LOGGING),
