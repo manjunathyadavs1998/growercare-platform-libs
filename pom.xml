@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  gc-parent (ADR-017): the shared build of every GrowerCare Java repository.
+  - Libraries in this repository use it as their parent, and so does every service repository (by version).
+  - Versions are CI-friendly: ${revision} defaults to a SNAPSHOT; a release tag vX.Y.Z publishes X.Y.Z
+    (flatten-maven-plugin writes the resolved version into the published POMs).
+  - Published to GitHub Packages (SPEC-PLAT-06 R74).
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -12,23 +19,24 @@
   </parent>
 
   <groupId>com.growercare</groupId>
-  <artifactId>gc-backend</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <artifactId>gc-parent</artifactId>
+  <version>${revision}</version>
   <packaging>pom</packaging>
-  <name>GrowerCare backend</name>
+  <name>gc-parent: shared build for GrowerCare libraries and services</name>
+  <url>https://github.com/manjunathyadavs1998/growercare-platform-libs</url>
 
   <modules>
-    <module>libs/gc-common</module>
-    <module>libs/gc-shard-routing</module>
-    <module>libs/gc-security</module>
-    <module>libs/gc-outbox</module>
-    <module>libs/gc-test-support</module>
-    <module>services/identity-access-service</module>
-    <module>services/case-service</module>
+    <module>gc-common</module>
+    <module>gc-shard-routing</module>
+    <module>gc-security</module>
+    <module>gc-outbox</module>
+    <module>gc-event-contracts</module>
+    <module>gc-test-support</module>
     <module>coverage</module>
   </modules>
 
   <properties>
+    <revision>1.0.0-SNAPSHOT</revision>
     <java.version>21</java.version>
     <maven.compiler.release>21</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -37,32 +45,33 @@
     <archunit.version>1.5.1</archunit.version>
     <springdoc.version>3.2.0</springdoc.version>
     <jacoco.version>0.8.16</jacoco.version>
-    <sonar-maven-plugin.version>5.8.0.7211</sonar-maven-plugin.version>
-    <!-- SonarQube Cloud (SPEC-PLAT-03 D2). Token comes from the SONAR_TOKEN env var in CI, never from the repo. -->
-    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-    <sonar.organization>manjunathyadavs1998</sonar.organization>
-    <sonar.projectKey>manjunathyadavs1998_growercare</sonar.projectKey>
-    <sonar.projectName>growercare</sonar.projectName>
-    <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-    <sonar.coverage.exclusions>**/*Application.java,**/libs/gc-test-support/**</sonar.coverage.exclusions>
-    <sonar.cpd.exclusions>**/db/**/*.sql</sonar.cpd.exclusions>
-    <sonar.qualitygate.wait>true</sonar.qualitygate.wait>
+    <flatten.version>1.7.3</flatten.version>
+    <jib.version>3.4.6</jib.version>
+    <!-- Services set this to their image name; Jib uses it (SPEC-PLAT-06 R79). -->
+    <gc.image.registry>ghcr.io/manjunathyadavs1998</gc.image.registry>
   </properties>
+
+  <distributionManagement>
+    <repository>
+      <id>github</id>
+      <name>GitHub Packages (growercare-platform-libs)</name>
+      <url>https://maven.pkg.github.com/manjunathyadavs1998/growercare-platform-libs</url>
+    </repository>
+  </distributionManagement>
 
   <dependencyManagement>
     <dependencies>
-      <!-- Internal libraries -->
-      <dependency><groupId>com.growercare</groupId><artifactId>gc-common</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>com.growercare</groupId><artifactId>gc-shard-routing</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>com.growercare</groupId><artifactId>gc-security</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>com.growercare</groupId><artifactId>gc-outbox</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>com.growercare</groupId><artifactId>gc-test-support</artifactId><version>${project.version}</version></dependency>
+      <!-- Platform libraries: always the same release as this parent -->
+      <dependency><groupId>com.growercare</groupId><artifactId>gc-common</artifactId><version>${revision}</version></dependency>
+      <dependency><groupId>com.growercare</groupId><artifactId>gc-shard-routing</artifactId><version>${revision}</version></dependency>
+      <dependency><groupId>com.growercare</groupId><artifactId>gc-security</artifactId><version>${revision}</version></dependency>
+      <dependency><groupId>com.growercare</groupId><artifactId>gc-outbox</artifactId><version>${revision}</version></dependency>
+      <dependency><groupId>com.growercare</groupId><artifactId>gc-event-contracts</artifactId><version>${revision}</version></dependency>
+      <dependency><groupId>com.growercare</groupId><artifactId>gc-test-support</artifactId><version>${revision}</version></dependency>
       <!-- Third party (not managed by the Spring Boot BOM) -->
       <dependency><groupId>com.tngtech.archunit</groupId><artifactId>archunit-junit5</artifactId><version>${archunit.version}</version></dependency>
       <dependency><groupId>org.springdoc</groupId><artifactId>springdoc-openapi-starter-webmvc-ui</artifactId><version>${springdoc.version}</version></dependency>
-      <!-- SPEC-CASE-05 D2: S3 API (AWS SDK v2) -->
       <dependency><groupId>software.amazon.awssdk</groupId><artifactId>bom</artifactId><version>${aws-sdk.version}</version><type>pom</type><scope>import</scope></dependency>
-      <!-- SPEC-PLAT-04 D2: event contracts are JSON Schema; 3.x is the Jackson 3 line -->
       <dependency><groupId>com.networknt</groupId><artifactId>json-schema-validator</artifactId><version>${json-schema-validator.version}</version></dependency>
     </dependencies>
   </dependencyManagement>
@@ -71,18 +80,44 @@
     <pluginManagement>
       <plugins>
         <plugin>
-          <groupId>org.sonarsource.scanner.maven</groupId>
-          <artifactId>sonar-maven-plugin</artifactId>
-          <version>${sonar-maven-plugin.version}</version>
-        </plugin>
-        <plugin>
           <groupId>org.jacoco</groupId>
           <artifactId>jacoco-maven-plugin</artifactId>
           <version>${jacoco.version}</version>
         </plugin>
+        <!-- Services: `mvn package jib:dockerBuild` or `jib:build` (CI). Distroless Java 21, non-root (SPEC-PLAT-06 R79). -->
+        <plugin>
+          <groupId>com.google.cloud.tools</groupId>
+          <artifactId>jib-maven-plugin</artifactId>
+          <version>${jib.version}</version>
+          <configuration>
+            <from><image>gcr.io/distroless/java21-debian12:nonroot</image></from>
+            <to><image>${gc.image.registry}/${project.artifactId}:${project.version}</image></to>
+            <container>
+              <user>nonroot</user>
+              <jvmFlags>
+                <jvmFlag>-XX:MaxRAMPercentage=75</jvmFlag>
+                <jvmFlag>-XX:+ExitOnOutOfMemoryError</jvmFlag>
+              </jvmFlags>
+              <creationTime>USE_CURRENT_TIMESTAMP</creationTime>
+            </container>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
+        <version>${flatten.version}</version>
+        <configuration>
+          <updatePomFile>true</updatePomFile>
+          <flattenMode>resolveCiFriendliesOnly</flattenMode>
+        </configuration>
+        <executions>
+          <execution><id>flatten</id><phase>process-resources</phase><goals><goal>flatten</goal></goals></execution>
+          <execution><id>flatten-clean</id><phase>clean</phase><goals><goal>clean</goal></goals></execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
@@ -134,13 +169,40 @@
           </execution>
         </executions>
       </plugin>
+      <!--
+        Coverage per repository (SPEC-PLAT-03 R40, now per repo): unit + integration executions are merged and
+        reported to target/site/jacoco-merged/jacoco.xml, which CI's coverage gate reads (>= 80 % lines).
+      -->
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <executions>
           <execution><id>prepare-agent</id><goals><goal>prepare-agent</goal></goals></execution>
           <execution><id>prepare-agent-it</id><goals><goal>prepare-agent-integration</goal></goals></execution>
-          <execution><id>report</id><phase>verify</phase><goals><goal>report</goal><goal>report-integration</goal></goals></execution>
+          <execution>
+            <id>merge</id>
+            <phase>verify</phase>
+            <goals><goal>merge</goal></goals>
+            <configuration>
+              <fileSets>
+                <fileSet>
+                  <directory>${project.build.directory}</directory>
+                  <includes><include>jacoco.exec</include><include>jacoco-it.exec</include></includes>
+                </fileSet>
+              </fileSets>
+              <destFile>${project.build.directory}/jacoco-merged.exec</destFile>
+            </configuration>
+          </execution>
+          <execution>
+            <id>report-merged</id>
+            <phase>verify</phase>
+            <goals><goal>report</goal></goals>
+            <configuration>
+              <dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
+              <outputDirectory>${project.reporting.outputDirectory}/jacoco-merged</outputDirectory>
+              <excludes><exclude>**/*Application.class</exclude></excludes>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
     </plugins>

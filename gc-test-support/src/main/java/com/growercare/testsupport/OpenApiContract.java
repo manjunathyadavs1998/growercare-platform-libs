@@ -11,7 +11,8 @@ import tools.jackson.databind.json.JsonMapper;
 
 /**
  * SPEC-PLAT-01 R1/R3: reads a service's generated OpenAPI document and exports it, pretty-printed with sorted keys
- * (stable diffs), to {@code gc-backend/contracts/<service>.openapi.json}. CI runs {@code git diff --exit-code contracts/}.
+ * (stable diffs), to {@code contracts/<service>.openapi.json} in the service repository (ADR-017).
+ * CI runs {@code git diff --exit-code contracts/}.
  */
 public final class OpenApiContract {
 
@@ -32,9 +33,9 @@ public final class OpenApiContract {
         return !node.isMissingNode();
     }
 
-    /** Writes the contract with sorted keys; the module runs with cwd = its own directory (services/<svc>). */
+    /** Writes the contract with sorted keys; a service repository builds from its root, so cwd = repository root. */
     public static Path export(JsonNode api, String serviceName) {
-        var target = Path.of("..", "..", "contracts", serviceName + ".openapi.json").normalize();
+        var target = Path.of("contracts", serviceName + ".openapi.json");
         try {
             Files.createDirectories(target.getParent());
             var sorted = JSON.readTree(JSON.writeValueAsString(JSON.treeToValue(api, Object.class)));

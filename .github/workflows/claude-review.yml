@@ -1,0 +1,113 @@
+# SPEC-PLAT-03 R44–R49: Claude Code reviews every PR; a deterministic gate turns its structured findings into
+# a severity summary, labels and the required "claude-review" check (fails on any Critical/High).
+# Auth: secret CLAUDE_CODE_OAUTH_TOKEN (from `claude setup-token`, any Claude subscription account) — or switch the
+# input to anthropic_api_key with an ANTHROPIC_API_KEY secret. No Claude GitHub App needed: comments use github.token.
+# Security: runs on `pull_request` (never pull_request_target); fork PRs get no secrets and fail closed (D5).
+name: claude-review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - name: Fork PRs need a maintainer review (SPEC-PLAT-03 D5 / R49)
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "::error title=Maintainer review required::Fork PRs do not receive secrets; a maintainer must bring this change in through an internal branch."
+          exit 1
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Claude review
+        id: review
+        continue-on-error: true            # the gate below decides; a crashed review fails closed (R48)
+        uses: anthropics/claude-code-action@f3b070c88125d33dbae5653df5f143101d4ea9dc # v1.0.276
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}     # workflow token (pull-requests: write); the Claude GitHub App is optional
+          track_progress: false
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            You are the code reviewer for GrowerCare. Review ONLY the changes in this pull request
+            (`gh pr diff ${{ github.event.pull_request.number }}`), reading surrounding code as needed.
+
+            Project rules to enforce (read them first):
+            - CLAUDE.md (conventions 1–12: authorization via policy-sdk with 404 for out-of-scope, DB-generated ids,
+              outbox-only events, no ORM, spec-driven development, parameterized tests, migrations expand/contract)
+            - .claude/agents/security-reviewer.md (checklist) and .claude/skills/java-*/SKILL.md
+            - The spec named in the PR body ("Spec: docs/specs/..."): every changed behaviour must match a spec rule,
+              and every spec example touched must have a parameterized test row.
+
+            Severity rubric (use exactly these values):
+            - Critical: exploitable security flaw or data loss (auth bypass, cross-country/partner data exposure,
+              SQL injection, committed secret, destructive migration without contract step).
+            - High: wrong production behaviour or spec violation (broken 403/404 semantics, missing transaction/outbox
+              atomicity, unguarded race, unhandled path that yields 500, PII in logs/events).
+            - Medium: robustness/maintainability (missing parameterized rows for spec examples, convention breaks,
+              weak validation, N+1 queries).
+            - Low: style, naming, docs, small simplifications.
+
+            For each concrete issue, post ONE inline comment on the exact changed line with
+            mcp__github_inline_comment__create_inline_comment, starting with "[Severity] title".
+            Do not comment on unchanged code unless the change makes it wrong. Do not praise; no summary comment.
+            Be precise: no speculative findings — only report what you verified in the code.
+
+            Finally return the structured output: every finding you posted (severity, file, line, title, detail,
+            rule = the CLAUDE.md convention / spec rule / checklist item violated) and a one-paragraph summary.
+            Return an empty findings array when there are no issues.
+          claude_args: >-
+            --max-turns 40
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr diff:*),Bash(gh pr view:*),Read,Grep,Glob"
+            --json-schema '{"type":"object","required":["findings","summary"],"properties":{"summary":{"type":"string"},"findings":{"type":"array","items":{"type":"object","required":["severity","file","title","detail"],"properties":{"severity":{"type":"string","enum":["Critical","High","Medium","Low"]},"file":{"type":"string"},"line":{"type":"integer"},"title":{"type":"string"},"detail":{"type":"string"},"rule":{"type":"string"}}}}}}'
+
+      - name: Severity gate (deterministic, SPEC-PLAT-03 R45–R48)
+        if: always()
+        env:
+          CLAUDE_REVIEW_JSON: ${{ steps.review.outputs.structured_output }}
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set +e
+          python3 scripts/review_gate.py --summary-file review.md --labels-file labels.txt
+          gate=$?
+          set -e
+          { echo "<!-- claude-review-gate -->"; cat review.md; } > comment.md
+          cat review.md >> "$GITHUB_STEP_SUMMARY"
+
+          # sticky summary comment (edit the previous one instead of piling up)
+          existing=$(gh api "repos/$REPO/issues/$PR/comments" --paginate --jq '.[] | select(.body | startswith("<!-- claude-review-gate -->")) | .id' | head -1)
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$existing" -F body=@comment.md --silent
+          else
+            gh pr comment "$PR" --repo "$REPO" --body-file comment.md
+          fi
+
+          # severity labels: replace previous review:* labels with the current ones
+          for old in $(gh pr view "$PR" --repo "$REPO" --json labels --jq '.labels[].name | select(startswith("review:"))'); do
+            gh pr edit "$PR" --repo "$REPO" --remove-label "$old" >/dev/null || true
+          done
+          while read -r label; do
+            [ -n "$label" ] && { gh pr edit "$PR" --repo "$REPO" --add-label "$label" >/dev/null || echo "::warning::could not add label $label (run scripts/apply-repo-settings.sh)"; }
+          done < labels.txt
+          exit $gate

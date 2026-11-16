@@ -5,9 +5,9 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.growercare</groupId>
-    <artifactId>gc-backend</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
-    <relativePath>../../pom.xml</relativePath>
+    <artifactId>gc-parent</artifactId>
+    <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>gc-security</artifactId>
   <name>gc-security (policy-sdk): JWT, principal, grants, policy enforcement</name>
@@ -18,6 +18,8 @@
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-data-redis</artifactId><optional>true</optional></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-security-test</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-webmvc-test</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>com.growercare</groupId><artifactId>gc-test-support</artifactId><scope>test</scope></dependency>
   </dependencies>
 
 </project>

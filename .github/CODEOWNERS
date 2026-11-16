@@ -1,0 +1,6 @@
+# SPEC-PLAT-02 R27 (repo kit). Later rules win.
+*                     @manjunathyadavs1998
+/.github/             @manjunathyadavs1998
+/scripts/             @manjunathyadavs1998
+/src/main/resources/db/   @manjunathyadavs1998
+/contracts/           @manjunathyadavs1998

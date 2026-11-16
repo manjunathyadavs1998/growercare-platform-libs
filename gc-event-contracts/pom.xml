@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.growercare</groupId>
+    <artifactId>gc-parent</artifactId>
+    <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <artifactId>gc-event-contracts</artifactId>
+  <name>gc-event-contracts: JSON Schemas of every published event (SPEC-PLAT-04 D2, ADR-015)</name>
+  <description>Producers validate against these in their contract tests; consumers pin the same version.
+    Schemas live on the classpath at gc/events/&lt;eventType&gt;.schema.json.</description>
+</project>

@@ -1,0 +1,84 @@
+# SPEC-PLAT-01 R11 / SPEC-PLAT-06 R81: build + all tests (unit, Testcontainers integration, ArchUnit, contracts),
+# API contract drift, and the 80 % line-coverage gate. Required status check for main: "verify".
+# From the growercare repo kit (templates/java-repo); keep it in sync with the kit.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Libraries: coverage/target/site/jacoco-aggregate/jacoco.xml · services: target/site/jacoco-merged/jacoco.xml
+  COVERAGE_XML: coverage/target/site/jacoco-aggregate/jacoco.xml
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read           # platform libraries from GitHub Packages (ADR-017)
+      pull-requests: write     # sticky coverage comment (SPEC-PLAT-03 R42); read-only on fork PRs
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          server-id: github                       # matches the <repository> id for GitHub Packages
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+
+      - name: Build and test (Testcontainers uses the runner's Docker)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: mvn -B -ntp verify
+
+      - name: API contract drift (commit regenerated contracts with the API change)
+        run: |
+          if [ -d contracts ]; then git diff --exit-code -- contracts/; else echo "no contracts/ directory"; fi
+
+      - name: Coverage gate — line coverage >= 80% (SPEC-PLAT-03 R41)
+        id: coverage
+        run: |
+          set +e
+          python3 scripts/coverage_gate.py "$COVERAGE_XML" --min-line 80 --summary-file coverage.md
+          gate=$?
+          cat coverage.md >> "$GITHUB_STEP_SUMMARY"
+          exit $gate
+
+      - name: Coverage comment on the PR (SPEC-PLAT-03 R42)
+        if: always() && github.event_name == 'pull_request' && steps.coverage.outcome != 'skipped'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          [ -f coverage.md ] || exit 0
+          existing=$(gh api "repos/$REPO/issues/$PR/comments" --paginate --jq '.[] | select(.body | startswith("<!-- coverage-gate -->")) | .id' | head -1)
+          if [ -n "$existing" ]; then gh api -X PATCH "repos/$REPO/issues/comments/$existing" -F body=@coverage.md --silent
+          else gh pr comment "$PR" --repo "$REPO" --body-file coverage.md; fi
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-reports
+          path: |
+            **/target/surefire-reports/
+            **/target/failsafe-reports/
+            **/target/site/jacoco*/
+          retention-days: 14
+          if-no-files-found: ignore

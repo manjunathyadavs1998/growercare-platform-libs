@@ -10,6 +10,12 @@ import org.springframework.context.annotation.Configuration;
 @Configuration(proxyBeanMethods = false)
 public class GcCommonConfiguration {
 
+    /** SPEC-PLAT-06 R76: refuse to start while required environment variables are missing (static: a BeanFactoryPostProcessor). */
+    @Bean
+    static RequiredEnvironment requiredEnvironment(org.springframework.core.env.ConfigurableEnvironment environment) {
+        return new RequiredEnvironment(environment);
+    }
+
     /** UTC clock; tests replace it to control time (grant expiry, SLAs). */
     @Bean
     @ConditionalOnMissingBean

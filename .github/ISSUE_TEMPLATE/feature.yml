@@ -1,0 +1,39 @@
+name: Feature (spec-driven)
+description: Propose a feature or change. It is implemented only after its spec is agreed.
+title: "feat(<scope>): <short description>"
+labels: [feature, needs-spec]
+body:
+  - type: input
+    id: requirements
+    attributes:
+      label: Requirement IDs
+      description: BRD IDs this addresses (docs/syngenta/02_BUSINESS_REQUIREMENTS.md)
+      placeholder: CASE-5, ACC-7
+    validations:
+      required: true
+  - type: dropdown
+    id: service
+    attributes:
+      label: Owning service
+      options: [identity-access-service, case-service, gc-common / libs, data platform, infrastructure / CI, docs only, other]
+    validations:
+      required: true
+  - type: textarea
+    id: behaviour
+    attributes:
+      label: Behaviour
+      description: What should happen, for whom (persona/role), and what must NOT happen (security/isolation)
+    validations:
+      required: true
+  - type: textarea
+    id: examples
+    attributes:
+      label: First examples
+      description: A few concrete Given/When/Then rows. They seed the spec's example table and the parameterized tests.
+  - type: checkboxes
+    id: dod
+    attributes:
+      label: Definition of ready
+      options:
+        - label: A spec will be written in docs/specs/<service>/ and agreed before code (skill spec-driven-development)
+          required: true

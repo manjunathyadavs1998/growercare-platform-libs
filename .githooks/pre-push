@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# SPEC-PLAT-02 R20 (client side): never push to main directly — open a pull request.
+# Server-side enforcement is the ruleset in .github/rulesets/main.json once the plan allows it.
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [[ "$remote_ref" == "refs/heads/main" && "${GC_ALLOW_MAIN_PUSH:-}" != "1" ]]; then
+    echo "pre-push: direct pushes to main are not allowed; push a <type>/<name> branch and open a PR." >&2
+    echo "          (bootstrap/emergency only: GC_ALLOW_MAIN_PUSH=1 git push ...)" >&2
+    exit 1
+  fi
+done
+exit 0

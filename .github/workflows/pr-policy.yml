@@ -1,0 +1,43 @@
+# SPEC-PLAT-02 R22–R26: pull-request policy (title, spec reference, tests with code, branch name).
+# PR text is passed through env vars only (never ${{ }} inside run:) to prevent script injection.
+name: pr-policy
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-policy-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Self-test the policy (SPEC-PLAT-02 examples E30–E40)
+        run: bash scripts/pr-policy-selftest.sh
+
+      - name: Self-test the quality gates (SPEC-PLAT-03 examples E50–E58)
+        run: |
+          python3 scripts/review_gate.py --selftest
+          python3 scripts/coverage_gate.py --selftest
+
+      - name: Check this pull request
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          CHANGED_FILES="$(git diff --name-only "$BASE_SHA"...$HEAD_SHA)"
+          export CHANGED_FILES
+          bash scripts/pr-policy.sh

@@ -1,0 +1,29 @@
+name: Bug
+description: Something behaves differently from its spec.
+title: "fix(<scope>): <short description>"
+labels: [bug]
+body:
+  - type: input
+    id: spec
+    attributes:
+      label: Spec rule / example violated
+      description: e.g. CASE-R37 / CASE-E52 (docs/specs/...). If no rule covers it, say so — the spec gets a new rule first.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Actor (dev-seed user), request, data. Never paste real tokens, phone numbers or customer data.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+      description: Status, problem `code`/`rule`, persisted state. Include the `traceId` from the problem response.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: "**Security issue?** Do not file it here — follow SECURITY.md."
