@@ -43,6 +43,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}     # workflow token (pull-requests: write); the Claude GitHub App is optional
+          allowed_bots: dependabot              # R44: review Dependabot PRs too (the action refuses bot actors otherwise)
           track_progress: false
           prompt: |
             REPO: ${{ github.repository }}
